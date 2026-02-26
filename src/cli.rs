@@ -79,6 +79,9 @@ pub struct ListArgs {
     /// Filter by project name
     #[arg(long)]
     pub project: Option<String>,
+    /// Include completed and canceled issues
+    #[arg(long)]
+    pub all: bool,
     /// Maximum number of issues to return
     #[arg(long, default_value = "50")]
     pub limit: i32,

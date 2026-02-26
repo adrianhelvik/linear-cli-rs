@@ -49,7 +49,7 @@ pub async fn run(args: CreateArgs) -> Result<()> {
                 name: t.name.unwrap_or_default(),
             })
             .collect();
-        let selected = interactive::select("Select a team:", options)?;
+        let selected = interactive::select("Select a team:", options, "team")?;
         selected.id
     };
 
@@ -90,7 +90,7 @@ pub async fn run(args: CreateArgs) -> Result<()> {
             })
             .collect();
         if !options.is_empty() {
-            let selected = interactive::select("Select initial state:", options)?;
+            let selected = interactive::select("Select initial state:", options, "state")?;
             input["stateId"] = json!(selected.id);
         }
     }

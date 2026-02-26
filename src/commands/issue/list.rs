@@ -19,6 +19,8 @@ pub async fn run(args: ListArgs) -> Result<()> {
 
     if let Some(state) = &args.state {
         filter["state"] = json!({ "name": { "eqIgnoreCase": state } });
+    } else if !args.all {
+        filter["state"] = json!({ "type": { "nin": ["completed", "canceled"] } });
     }
 
     if let Some(assignee) = &args.assignee {

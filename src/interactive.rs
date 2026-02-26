@@ -16,9 +16,9 @@ pub fn require_text(flag_name: &str, prompt: &str, value: Option<String>) -> Res
     Ok(result)
 }
 
-pub fn select<T: std::fmt::Display>(prompt: &str, options: Vec<T>) -> Result<T> {
+pub fn select<T: std::fmt::Display>(prompt: &str, options: Vec<T>, flag: &str) -> Result<T> {
     if !is_tty() {
-        bail!("Interactive selection required but not running in a terminal. Use flags instead.");
+        bail!("Missing required --{flag} (non-interactive mode)");
     }
     if options.is_empty() {
         bail!("No options available.");

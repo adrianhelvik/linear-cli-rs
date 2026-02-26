@@ -8,9 +8,7 @@ use crate::config;
 
 pub async fn run() -> Result<()> {
     let key = if std::io::stdin().is_terminal() {
-        inquire::Password::new("Enter your Linear API key:")
-            .without_confirmation()
-            .prompt()?
+        inquire::Text::new("Enter your Linear API key:").prompt()?
     } else {
         let mut key = String::new();
         std::io::stdin().read_line(&mut key)?;

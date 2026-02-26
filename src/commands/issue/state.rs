@@ -53,7 +53,7 @@ pub async fn run(id: String, state: Option<String>) -> Result<()> {
             })
             .collect();
 
-        let selected = interactive::select("Select state:", options)?;
+        let selected = interactive::select("Select state:", options, "state")?;
         let name = selected.name.clone();
         (selected.id, name)
     };
