@@ -99,8 +99,8 @@ query WorkflowStates($filter: WorkflowStateFilter) {
 "#;
 
 pub const USERS: &str = r#"
-query {
-    users {
+query Users($first: Int) {
+    users(first: $first) {
         nodes {
             id
             name
@@ -113,8 +113,8 @@ query {
 "#;
 
 pub const LABELS: &str = r#"
-query {
-    issueLabels {
+query Labels($first: Int) {
+    issueLabels(first: $first) {
         nodes {
             id
             name

@@ -3,7 +3,8 @@ use serde_json::json;
 
 use crate::api::client::LinearClient;
 use crate::api::queries;
-use crate::api::types::*;
+use crate::api::resolve;
+use crate::api::types::IssuesResponse;
 use crate::cli::ListArgs;
 use crate::config;
 use crate::output;
@@ -35,12 +36,8 @@ pub async fn run(args: ListArgs) -> Result<()> {
     };
 
     if let Some(assignee) = resolved_assignee {
-        if assignee.eq_ignore_ascii_case("me") {
-            let viewer: ViewerResponse = client.query(queries::VIEWER, json!({})).await?;
-            filter["assignee"] = json!({ "id": { "eq": viewer.viewer.id } });
-        } else {
-            filter["assignee"] = json!({ "displayName": { "containsIgnoreCase": assignee } });
-        }
+        let assignee_id = resolve::user_id(&client, assignee).await?;
+        filter["assignee"] = json!({ "id": { "eq": assignee_id } });
     }
 
     if let Some(priority) = args.priority {

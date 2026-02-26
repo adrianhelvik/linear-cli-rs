@@ -14,7 +14,7 @@ pub async fn run(args: AuthArgs) -> Result<()> {
             .trim()
             .to_string()
     } else if std::io::stdin().is_terminal() {
-        inquire::Text::new("Enter your Linear API key:").prompt()?
+        rpassword::prompt_password("Enter your Linear API key: ")?
     } else {
         let mut key = String::new();
         std::io::stdin().read_line(&mut key)?;

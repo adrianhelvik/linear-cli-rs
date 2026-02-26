@@ -47,7 +47,7 @@ pub enum IssueCommands {
     Assign {
         /// Issue ID or identifier
         id: String,
-        /// User to assign (name/email, or omit to unassign)
+        /// User to assign (display name/name/email, or omit to unassign)
         user: Option<String>,
     },
     /// Change issue workflow state
@@ -74,7 +74,7 @@ pub struct ListArgs {
     /// Filter by state name
     #[arg(long)]
     pub state: Option<String>,
-    /// Filter by assignee (name/email, or "me")
+    /// Filter by assignee (display name/name/email, or "me")
     #[arg(long)]
     pub assignee: Option<String>,
     /// Shortcut for --assignee me
@@ -117,7 +117,7 @@ pub struct CreateArgs {
     /// State name
     #[arg(long)]
     pub state: Option<String>,
-    /// Assignee (name/email, or "me")
+    /// Assignee (display name/name/email, or "me")
     #[arg(long)]
     pub assignee: Option<String>,
     /// Label name
@@ -141,7 +141,7 @@ pub struct UpdateArgs {
     /// New state name
     #[arg(long)]
     pub state: Option<String>,
-    /// New assignee (name/email, "me", or "" to unassign)
+    /// New assignee (display name/name/email, "me", or "" to unassign)
     #[arg(long)]
     pub assignee: Option<String>,
     /// Add a label (repeatable)
