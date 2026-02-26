@@ -2,8 +2,8 @@ use anyhow::Result;
 use serde_json::json;
 
 use crate::api::client::LinearClient;
-use crate::api::{mutations, queries, resolve};
 use crate::api::types::*;
+use crate::api::{mutations, queries, resolve};
 use crate::cli::CreateArgs;
 use crate::config;
 use crate::interactive;

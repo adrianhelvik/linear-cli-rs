@@ -14,7 +14,7 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Auth => commands::auth::run().await,
+        Commands::Auth(args) => commands::auth::run(args).await,
         Commands::Me => commands::me::run().await,
         Commands::Issue { command } => match command {
             IssueCommands::List(args) => commands::issue::list::run(args).await,

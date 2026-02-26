@@ -23,14 +23,23 @@ pub async fn run(args: ListArgs) -> Result<()> {
         filter["state"] = json!({ "type": { "nin": ["completed", "canceled"] } });
     }
 
-    if let Some(assignee) = &args.assignee {
-        if assignee == "me" {
-            let viewer: ViewerResponse =
-                client.query(queries::VIEWER, json!({})).await?;
+    let resolved_assignee = if let Some(assignee) = args.assignee.as_deref() {
+        Some(assignee)
+    } else if args.mine {
+        Some("me")
+    } else if args.all_assignees || args.team.is_some() {
+        None
+    } else {
+        // Sensible default: no assignee/team flags means "my active issues".
+        Some("me")
+    };
+
+    if let Some(assignee) = resolved_assignee {
+        if assignee.eq_ignore_ascii_case("me") {
+            let viewer: ViewerResponse = client.query(queries::VIEWER, json!({})).await?;
             filter["assignee"] = json!({ "id": { "eq": viewer.viewer.id } });
         } else {
-            filter["assignee"] =
-                json!({ "displayName": { "containsIgnoreCase": assignee } });
+            filter["assignee"] = json!({ "displayName": { "containsIgnoreCase": assignee } });
         }
     }
 

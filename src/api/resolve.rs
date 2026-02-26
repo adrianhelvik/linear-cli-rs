@@ -55,11 +55,7 @@ pub async fn state_id(client: &LinearClient, team_id: &str, name: &str) -> Resul
     resp.workflow_states
         .nodes
         .iter()
-        .find(|s| {
-            s.name
-                .as_deref()
-                .is_some_and(|n| n.to_lowercase() == lower)
-        })
+        .find(|s| s.name.as_deref().is_some_and(|n| n.to_lowercase() == lower))
         .map(|s| s.id.clone())
         .ok_or_else(|| anyhow::anyhow!("State '{name}' not found for this team"))
 }
@@ -70,11 +66,7 @@ pub async fn label_id(client: &LinearClient, name: &str) -> Result<String> {
     resp.issue_labels
         .nodes
         .iter()
-        .find(|l| {
-            l.name
-                .as_deref()
-                .is_some_and(|n| n.to_lowercase() == lower)
-        })
+        .find(|l| l.name.as_deref().is_some_and(|n| n.to_lowercase() == lower))
         .map(|l| l.id.clone())
         .ok_or_else(|| anyhow::anyhow!("Label '{name}' not found"))
 }

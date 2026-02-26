@@ -10,7 +10,7 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Commands {
     /// Authenticate with Linear
-    Auth,
+    Auth(AuthArgs),
     /// Show the authenticated user
     Me,
     /// Manage issues
@@ -60,6 +60,13 @@ pub enum IssueCommands {
 }
 
 #[derive(clap::Args)]
+pub struct AuthArgs {
+    /// Read API key from file (recommended for scripts)
+    #[arg(long = "key-file", value_name = "FILE")]
+    pub key_file: Option<std::path::PathBuf>,
+}
+
+#[derive(clap::Args)]
 pub struct ListArgs {
     /// Filter by team key (e.g. ENG)
     #[arg(long)]
@@ -70,6 +77,12 @@ pub struct ListArgs {
     /// Filter by assignee (name/email, or "me")
     #[arg(long)]
     pub assignee: Option<String>,
+    /// Shortcut for --assignee me
+    #[arg(long, conflicts_with_all = ["assignee", "all_assignees"])]
+    pub mine: bool,
+    /// Do not apply implicit "my issues" default
+    #[arg(long, conflicts_with_all = ["assignee", "mine"])]
+    pub all_assignees: bool,
     /// Filter by priority (0=none, 1=urgent, 2=high, 3=medium, 4=low)
     #[arg(long)]
     pub priority: Option<i32>,
@@ -131,9 +144,15 @@ pub struct UpdateArgs {
     /// New assignee (name/email, "me", or "" to unassign)
     #[arg(long)]
     pub assignee: Option<String>,
-    /// New label
-    #[arg(long)]
-    pub label: Option<String>,
+    /// Add a label (repeatable)
+    #[arg(long = "add-label", value_name = "LABEL")]
+    pub add_label: Vec<String>,
+    /// Remove a label (repeatable)
+    #[arg(long = "remove-label", value_name = "LABEL")]
+    pub remove_label: Vec<String>,
+    /// Remove all labels
+    #[arg(long, conflicts_with_all = ["add_label", "remove_label"])]
+    pub clear_labels: bool,
 }
 
 #[derive(Subcommand)]

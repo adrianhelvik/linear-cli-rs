@@ -2,8 +2,8 @@ use anyhow::Result;
 use serde_json::json;
 
 use crate::api::client::LinearClient;
-use crate::api::{mutations, queries, resolve};
 use crate::api::types::*;
+use crate::api::{mutations, queries, resolve};
 use crate::config;
 use crate::interactive;
 
@@ -22,8 +22,7 @@ pub async fn run(id: String, state: Option<String>) -> Result<()> {
     let client = LinearClient::new(config::api_key()?);
 
     // Fetch issue to get team ID
-    let issue_resp: IssueResponse =
-        client.query(queries::ISSUE, json!({ "id": id })).await?;
+    let issue_resp: IssueResponse = client.query(queries::ISSUE, json!({ "id": id })).await?;
     let team_id = issue_resp
         .issue
         .team

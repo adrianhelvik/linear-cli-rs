@@ -2,8 +2,8 @@ use anyhow::Result;
 use serde_json::json;
 
 use crate::api::client::LinearClient;
-use crate::api::{mutations, resolve};
 use crate::api::types::IssueUpdateResponse;
+use crate::api::{mutations, resolve};
 use crate::config;
 
 pub async fn run(id: String, user: Option<String>) -> Result<()> {
@@ -14,10 +14,7 @@ pub async fn run(id: String, user: Option<String>) -> Result<()> {
             let uid = resolve::user_id(&client, name).await?;
             (json!({ "assigneeId": uid }), format!("Assigned to {name}"))
         }
-        None => (
-            json!({ "assigneeId": null }),
-            "Unassigned".to_string(),
-        ),
+        None => (json!({ "assigneeId": null }), "Unassigned".to_string()),
     };
 
     let resp: IssueUpdateResponse = client

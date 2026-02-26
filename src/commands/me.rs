@@ -7,9 +7,7 @@ use crate::config;
 
 pub async fn run() -> Result<()> {
     let client = LinearClient::new(config::api_key()?);
-    let resp: ViewerResponse = client
-        .query(queries::VIEWER, serde_json::json!({}))
-        .await?;
+    let resp: ViewerResponse = client.query(queries::VIEWER, serde_json::json!({})).await?;
 
     let user = resp.viewer;
     let name = user

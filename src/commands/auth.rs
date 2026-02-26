@@ -1,13 +1,19 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use std::io::IsTerminal;
 
 use crate::api::client::LinearClient;
 use crate::api::queries;
 use crate::api::types::ViewerResponse;
+use crate::cli::AuthArgs;
 use crate::config;
 
-pub async fn run() -> Result<()> {
-    let key = if std::io::stdin().is_terminal() {
+pub async fn run(args: AuthArgs) -> Result<()> {
+    let key = if let Some(path) = args.key_file {
+        std::fs::read_to_string(&path)
+            .with_context(|| format!("Failed to read API key file {}", path.display()))?
+            .trim()
+            .to_string()
+    } else if std::io::stdin().is_terminal() {
         inquire::Text::new("Enter your Linear API key:").prompt()?
     } else {
         let mut key = String::new();
