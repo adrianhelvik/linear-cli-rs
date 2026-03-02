@@ -13,6 +13,9 @@ pub enum Commands {
     Auth(AuthArgs),
     /// Show the authenticated user
     Me,
+    /// Run a raw GraphQL query/mutation against Linear
+    #[command(alias = "ap")]
+    Api(ApiArgs),
     /// Manage issues
     Issue {
         #[command(subcommand)]
@@ -64,6 +67,31 @@ pub struct AuthArgs {
     /// Read API key from file (recommended for scripts)
     #[arg(long = "key-file", value_name = "FILE")]
     pub key_file: Option<std::path::PathBuf>,
+}
+
+#[derive(clap::Args)]
+pub struct ApiArgs {
+    /// GraphQL query/mutation text
+    #[arg(long, short = 'q', value_name = "QUERY", conflicts_with = "query_file")]
+    pub query: Option<String>,
+    /// Read GraphQL query/mutation from file
+    #[arg(long = "query-file", value_name = "FILE", conflicts_with = "query")]
+    pub query_file: Option<std::path::PathBuf>,
+    /// Variables as JSON object
+    #[arg(
+        long,
+        short = 'v',
+        value_name = "JSON",
+        conflicts_with = "variables_file"
+    )]
+    pub variables: Option<String>,
+    /// Read variables JSON object from file
+    #[arg(
+        long = "variables-file",
+        value_name = "FILE",
+        conflicts_with = "variables"
+    )]
+    pub variables_file: Option<std::path::PathBuf>,
 }
 
 #[derive(clap::Args)]

@@ -16,6 +16,7 @@ async fn main() -> Result<()> {
     match cli.command {
         Commands::Auth(args) => commands::auth::run(args).await,
         Commands::Me => commands::me::run().await,
+        Commands::Api(args) => commands::api::run(args).await,
         Commands::Issue { command } => match command {
             IssueCommands::List(args) => commands::issue::list::run(args).await,
             IssueCommands::View { id } => commands::issue::view::run(id).await,
