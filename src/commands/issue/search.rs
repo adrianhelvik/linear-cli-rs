@@ -12,16 +12,16 @@ pub async fn run(query: String, json: bool) -> Result<()> {
     let resp: IssueSearchResponse = client
         .query(
             queries::ISSUE_SEARCH,
-            json!({ "query": query, "first": 50 }),
+            json!({ "term": query, "first": 50 }),
         )
         .await?;
     if json {
         println!(
             "{}",
-            serde_json::to_string_pretty(&resp.issue_search.nodes)?
+            serde_json::to_string_pretty(&resp.search_issues.nodes)?
         );
     } else {
-        output::issue_table(&resp.issue_search.nodes);
+        output::issue_table(&resp.search_issues.nodes);
     }
     Ok(())
 }

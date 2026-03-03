@@ -76,8 +76,8 @@ query Issue($id: String!) {
 "#;
 
 pub const ISSUE_SEARCH: &str = r#"
-query IssueSearch($query: String!, $first: Int) {
-    issueSearch(query: $query, first: $first) {
+query SearchIssues($term: String!, $first: Int) {
+    searchIssues(term: $term, first: $first) {
         nodes {
             id
             identifier

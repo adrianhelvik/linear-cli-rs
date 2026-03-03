@@ -38,8 +38,8 @@ async fn main() -> Result<()> {
             }
             IssueCommands::Assign { id, user } => commands::issue::assign::run(id, user).await,
             IssueCommands::State { id, state } => commands::issue::state::run(id, state).await,
-            IssueCommands::Comment { id, body } => {
-                commands::issue::comment::run(id, body).await
+            IssueCommands::Comment { id, body, json } => {
+                commands::issue::comment::run(id, body, json).await
             }
         },
         Commands::Team { command } => match command {

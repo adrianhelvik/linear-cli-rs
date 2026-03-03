@@ -98,6 +98,9 @@ pub enum IssueCommands {
         /// Comment body (reads from stdin if omitted in non-interactive mode)
         #[arg(short, long)]
         body: Option<String>,
+        /// Output created comment as JSON (for scripts and agents)
+        #[arg(long)]
+        json: bool,
     },
 }
 

@@ -8,7 +8,7 @@ use crate::api::queries;
 use crate::api::types::{CommentCreateResponse, IssueResponse};
 use crate::config;
 
-pub async fn run(id: String, body: Option<String>) -> Result<()> {
+pub async fn run(id: String, body: Option<String>, json_output: bool) -> Result<()> {
     let body = match body {
         Some(b) => b,
         None => read_body_from_stdin()?,
@@ -36,7 +36,11 @@ pub async fn run(id: String, body: Option<String>) -> Result<()> {
         .await?;
 
     if resp.comment_create.success {
-        if let Some(comment) = &resp.comment_create.comment {
+        if json_output {
+            if let Some(comment) = &resp.comment_create.comment {
+                println!("{}", serde_json::to_string_pretty(comment)?);
+            }
+        } else if let Some(comment) = &resp.comment_create.comment {
             let author = comment
                 .user
                 .as_ref()

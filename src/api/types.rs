@@ -124,8 +124,8 @@ pub struct IssueResponse {
 
 #[derive(Debug, Deserialize)]
 pub struct IssueSearchResponse {
-    #[serde(rename = "issueSearch")]
-    pub issue_search: Connection<Issue>,
+    #[serde(rename = "searchIssues")]
+    pub search_issues: Connection<Issue>,
 }
 
 #[derive(Debug, Deserialize)]
