@@ -1,7 +1,18 @@
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(name = "linear", about = "CLI for the Linear API", version)]
+#[command(
+    name = "linear",
+    about = "CLI for the Linear API",
+    version,
+    after_help = "\x1b[1mExamples:\x1b[0m
+  linear issue list                  List my active issues
+  linear issue DIS-510               View an issue (shorthand)
+  linear issue view DIS-510 --json   View as JSON (for agents)
+  linear issue create --team ENG     Create issue interactively
+  linear me                          Show authenticated user
+  linear api -q '{ viewer { id } }'  Run raw GraphQL"
+)]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
@@ -29,10 +40,23 @@ pub enum Commands {
 }
 
 #[derive(Subcommand)]
+#[command(
+    after_help = "\x1b[1mExamples:\x1b[0m
+  linear issue list                        List my active issues
+  linear issue list --team ENG --all       All ENG issues including done
+  linear issue view DIS-510                View issue with comments
+  linear issue DIS-510                     Shorthand for view
+  linear issue view DIS-510 --json         View as JSON (for agents)
+  linear issue list --json                 List as JSON (for agents)
+  linear issue create --team ENG           Create issue (interactive)
+  linear issue update DIS-510 --state 'In Progress'
+  linear issue comment DIS-510 -b 'Fixed'  Add a comment
+  echo 'details...' | linear issue comment DIS-510"
+)]
 pub enum IssueCommands {
     /// List issues with filters
     List(ListArgs),
-    /// View issue details
+    /// View issue details (aliases: get, show)
     #[command(alias = "get", alias = "show")]
     View {
         /// Issue ID or identifier (e.g. ENG-123)
@@ -75,6 +99,17 @@ pub enum IssueCommands {
         #[arg(short, long)]
         body: Option<String>,
     },
+}
+
+/// Check if a string looks like a Linear issue identifier (e.g. ENG-123, DIS-510).
+pub fn looks_like_issue_id(s: &str) -> bool {
+    let Some((prefix, number)) = s.split_once('-') else {
+        return false;
+    };
+    !prefix.is_empty()
+        && prefix.chars().all(|c| c.is_ascii_alphanumeric())
+        && !number.is_empty()
+        && number.chars().all(|c| c.is_ascii_digit())
 }
 
 #[derive(clap::Args)]

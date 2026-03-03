@@ -11,7 +11,18 @@ use cli::{Cli, Commands, IssueCommands, TeamCommands};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let cli = Cli::parse();
+    // Support `linear issue DIS-510` as shorthand for `linear issue view DIS-510`
+    let args: Vec<String> = std::env::args().collect();
+    let cli = if args.len() >= 3
+        && args[1] == "issue"
+        && cli::looks_like_issue_id(&args[2])
+    {
+        let mut patched = vec![args[0].clone(), "issue".into(), "view".into()];
+        patched.extend_from_slice(&args[2..]);
+        Cli::parse_from(patched)
+    } else {
+        Cli::parse()
+    };
 
     match cli.command {
         Commands::Auth(args) => commands::auth::run(args).await,
