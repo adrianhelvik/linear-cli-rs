@@ -25,3 +25,17 @@ mutation IssueUpdate($id: String!, $input: IssueUpdateInput!) {
     }
 }
 "#;
+
+pub const COMMENT_CREATE: &str = r#"
+mutation CommentCreate($input: CommentCreateInput!) {
+    commentCreate(input: $input) {
+        success
+        comment {
+            id
+            body
+            createdAt
+            user { id name displayName }
+        }
+    }
+}
+"#;

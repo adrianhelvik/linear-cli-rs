@@ -1,4 +1,5 @@
 pub mod assign;
+pub mod comment;
 pub mod create;
 pub mod list;
 pub mod search;

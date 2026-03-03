@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 // Generic GraphQL response wrapper
 #[derive(Debug, Deserialize)]
@@ -13,10 +13,10 @@ pub struct GraphQLError {
 }
 
 // Connection types
-#[derive(Debug, Clone, Deserialize)]
-pub struct Connection<T> {
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Connection<T: Serialize> {
     pub nodes: Vec<T>,
-    #[serde(rename = "pageInfo")]
+    #[serde(rename = "pageInfo", skip_serializing)]
     pub page_info: Option<PageInfo>,
 }
 
@@ -29,46 +29,58 @@ pub struct PageInfo {
 }
 
 // Domain types
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct User {
     pub id: String,
     pub name: Option<String>,
     pub email: Option<String>,
     #[serde(rename = "displayName")]
     pub display_name: Option<String>,
+    #[serde(skip_serializing)]
     pub active: Option<bool>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Team {
     pub id: String,
     pub key: Option<String>,
     pub name: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WorkflowState {
     pub id: String,
     pub name: Option<String>,
     #[serde(rename = "type")]
     pub state_type: Option<String>,
+    #[serde(skip_serializing)]
     pub color: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Label {
     pub id: String,
     pub name: Option<String>,
+    #[serde(skip_serializing)]
     pub color: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Project {
     pub id: String,
     pub name: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Comment {
+    pub id: String,
+    pub body: Option<String>,
+    #[serde(rename = "createdAt")]
+    pub created_at: Option<String>,
+    pub user: Option<User>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Issue {
     pub id: String,
     pub identifier: Option<String>,
@@ -86,6 +98,7 @@ pub struct Issue {
     pub assignee: Option<User>,
     pub labels: Option<Connection<Label>>,
     pub project: Option<Project>,
+    pub comments: Option<Connection<Comment>>,
 }
 
 // Query response wrappers
@@ -149,4 +162,16 @@ pub struct IssueCreateResponse {
 pub struct IssueUpdateResponse {
     #[serde(rename = "issueUpdate")]
     pub issue_update: MutationResult,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CommentMutationResult {
+    pub success: bool,
+    pub comment: Option<Comment>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CommentCreateResponse {
+    #[serde(rename = "commentCreate")]
+    pub comment_create: CommentMutationResult,
 }

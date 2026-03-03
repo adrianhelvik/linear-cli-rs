@@ -58,6 +58,10 @@ pub async fn run(args: ListArgs) -> Result<()> {
     });
 
     let resp: IssuesResponse = client.query(queries::ISSUES, variables).await?;
-    output::issue_table(&resp.issues.nodes);
+    if args.json {
+        println!("{}", serde_json::to_string_pretty(&resp.issues.nodes)?);
+    } else {
+        output::issue_table(&resp.issues.nodes);
+    }
     Ok(())
 }

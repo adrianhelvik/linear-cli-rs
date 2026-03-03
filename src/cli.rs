@@ -37,6 +37,9 @@ pub enum IssueCommands {
     View {
         /// Issue ID or identifier (e.g. ENG-123)
         id: String,
+        /// Output as JSON (for scripts and agents)
+        #[arg(long)]
+        json: bool,
     },
     /// Create a new issue
     Create(CreateArgs),
@@ -46,6 +49,9 @@ pub enum IssueCommands {
     Search {
         /// Search query
         query: String,
+        /// Output as JSON (for scripts and agents)
+        #[arg(long)]
+        json: bool,
     },
     /// Assign an issue to a user
     Assign {
@@ -60,6 +66,14 @@ pub enum IssueCommands {
         id: String,
         /// State name (e.g. "In Progress")
         state: Option<String>,
+    },
+    /// Add a comment to an issue
+    Comment {
+        /// Issue ID or identifier (e.g. ENG-123)
+        id: String,
+        /// Comment body (reads from stdin if omitted in non-interactive mode)
+        #[arg(short, long)]
+        body: Option<String>,
     },
 }
 
@@ -127,6 +141,9 @@ pub struct ListArgs {
     /// Maximum number of issues to return
     #[arg(long, default_value = "50")]
     pub limit: i32,
+    /// Output as JSON (for scripts and agents)
+    #[arg(long)]
+    pub json: bool,
 }
 
 #[derive(clap::Args)]

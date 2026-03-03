@@ -63,6 +63,14 @@ query Issue($id: String!) {
         assignee { id name email displayName }
         labels { nodes { id name color } }
         project { id name }
+        comments(first: 100) {
+            nodes {
+                id
+                body
+                createdAt
+                user { id name displayName }
+            }
+        }
     }
 }
 "#;

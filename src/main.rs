@@ -19,12 +19,17 @@ async fn main() -> Result<()> {
         Commands::Api(args) => commands::api::run(args).await,
         Commands::Issue { command } => match command {
             IssueCommands::List(args) => commands::issue::list::run(args).await,
-            IssueCommands::View { id } => commands::issue::view::run(id).await,
+            IssueCommands::View { id, json } => commands::issue::view::run(id, json).await,
             IssueCommands::Create(args) => commands::issue::create::run(args).await,
             IssueCommands::Update(args) => commands::issue::update::run(args).await,
-            IssueCommands::Search { query } => commands::issue::search::run(query).await,
+            IssueCommands::Search { query, json } => {
+                commands::issue::search::run(query, json).await
+            }
             IssueCommands::Assign { id, user } => commands::issue::assign::run(id, user).await,
             IssueCommands::State { id, state } => commands::issue::state::run(id, state).await,
+            IssueCommands::Comment { id, body } => {
+                commands::issue::comment::run(id, body).await
+            }
         },
         Commands::Team { command } => match command {
             TeamCommands::List => commands::team::list::run().await,
