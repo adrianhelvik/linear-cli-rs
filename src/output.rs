@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use colored::Colorize;
 use crossterm::terminal;
 use std::io::IsTerminal;
@@ -184,7 +185,49 @@ pub fn issue_table(issues: &[Issue]) {
     println!("{table}");
 }
 
+fn relative_time(iso: &str) -> String {
+    let Ok(dt) = iso.parse::<DateTime<Utc>>() else {
+        return iso.to_string();
+    };
+    let now = Utc::now();
+    let delta = now.signed_duration_since(dt);
+
+    if delta.num_seconds() < 0 {
+        return "just now".to_string();
+    }
+
+    let secs = delta.num_seconds();
+    if secs < 60 {
+        return "just now".to_string();
+    }
+    let mins = delta.num_minutes();
+    if mins < 60 {
+        return format!("{mins}m ago");
+    }
+    let hours = delta.num_hours();
+    if hours < 24 {
+        return format!("{hours}h ago");
+    }
+    let days = delta.num_days();
+    if days < 30 {
+        return format!("{days}d ago");
+    }
+    if days < 365 {
+        let months = days / 30;
+        return format!("{months}mo ago");
+    }
+    let years = days / 365;
+    format!("{years}y ago")
+}
+
+fn section_rule(label: &str, width: usize) -> String {
+    let prefix = format!("── {label} ");
+    let remaining = width.saturating_sub(prefix.len());
+    format!("{}{}", prefix, "─".repeat(remaining)).dimmed().to_string()
+}
+
 pub fn issue_detail(issue: &Issue) {
+    let width = terminal_width().min(80);
     let id = issue.identifier.as_deref().unwrap_or("—");
     let title = issue.title.as_deref().unwrap_or("—");
     let state = issue
@@ -221,27 +264,82 @@ pub fn issue_detail(issue: &Issue) {
     let project = issue
         .project
         .as_ref()
-        .and_then(|p| p.name.as_deref())
-        .unwrap_or("—");
+        .and_then(|p| p.name.as_deref());
     let url = issue.url.as_deref().unwrap_or("—");
 
+    // Header
     println!("{}", format!("{id}  {title}").bold());
     println!();
-    println!("State:    {state}");
-    println!("Priority: {priority}");
-    println!("Team:     {team}");
-    println!("Assignee: {assignee}");
-    if !labels.is_empty() {
-        println!("Labels:   {labels}");
-    }
-    println!("Project:  {project}");
-    println!("URL:      {url}");
 
+    // Two-column metadata
+    println!(
+        "  {:<10} {:<26} {:<10} {}",
+        "State:".dimmed(),
+        state,
+        "Priority:".dimmed(),
+        priority
+    );
+    println!(
+        "  {:<10} {:<26} {:<10} {}",
+        "Team:".dimmed(),
+        team,
+        "Assignee:".dimmed(),
+        assignee
+    );
+    if !labels.is_empty() {
+        println!("  {:<10} {}", "Labels:".dimmed(), labels);
+    }
+    if let Some(proj) = project {
+        println!("  {:<10} {}", "Project:".dimmed(), proj);
+    }
+    println!("  {:<10} {}", "URL:".dimmed(), url);
+
+    // Description
     if let Some(desc) = &issue.description {
         if !desc.is_empty() {
             println!();
-            println!("{}", "Description".bold());
-            println!("{desc}");
+            println!("{}", section_rule("Description", width));
+            println!();
+            for line in desc.lines() {
+                println!("  {line}");
+            }
+        }
+    }
+
+    // Comments
+    if let Some(comments) = &issue.comments {
+        if !comments.nodes.is_empty() {
+            let count = comments.nodes.len();
+            println!();
+            println!(
+                "{}",
+                section_rule(&format!("Comments ({count})"), width)
+            );
+
+            for comment in &comments.nodes {
+                let author = comment
+                    .user
+                    .as_ref()
+                    .and_then(|u| u.display_name.as_deref().or(u.name.as_deref()))
+                    .unwrap_or("Unknown");
+                let time = comment
+                    .created_at
+                    .as_deref()
+                    .map(relative_time)
+                    .unwrap_or_default();
+
+                println!();
+                println!(
+                    "  {}  {}",
+                    author.bold(),
+                    time.dimmed()
+                );
+                if let Some(body) = &comment.body {
+                    for line in body.lines() {
+                        println!("  {line}");
+                    }
+                }
+            }
         }
     }
 }
