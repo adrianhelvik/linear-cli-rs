@@ -33,6 +33,7 @@ pub enum IssueCommands {
     /// List issues with filters
     List(ListArgs),
     /// View issue details
+    #[command(alias = "get", alias = "show")]
     View {
         /// Issue ID or identifier (e.g. ENG-123)
         id: String,
