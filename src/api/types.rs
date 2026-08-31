@@ -96,6 +96,16 @@ pub struct Comment {
     pub parent: Option<CommentRef>,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Attachment {
+    pub id: String,
+    pub title: Option<String>,
+    pub subtitle: Option<String>,
+    pub url: Option<String>,
+    #[serde(rename = "sourceType")]
+    pub source_type: Option<String>,
+}
+
 // Lightweight issue reference used for parent/sub-issue relations
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct IssueRef {
@@ -132,6 +142,8 @@ pub struct Issue {
     pub parent: Option<IssueRef>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub children: Option<Connection<IssueRef>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub attachments: Option<Connection<Attachment>>,
     pub comments: Option<Connection<Comment>>,
 }
 

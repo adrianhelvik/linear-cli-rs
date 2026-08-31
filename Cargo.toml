@@ -1,6 +1,6 @@
 [package]
 name = "linear-cli-rs"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 description = "Fast, zero-config CLI for Linear — issues, sub-issues, comments, search, and raw GraphQL"
 license = "MIT"

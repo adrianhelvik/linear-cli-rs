@@ -84,6 +84,15 @@ query Issue($id: String!) {
                 assignee { id name displayName }
             }
         }
+        attachments(first: 50) {
+            nodes {
+                id
+                title
+                subtitle
+                url
+                sourceType
+            }
+        }
         comments(first: 100) {
             nodes {
                 id

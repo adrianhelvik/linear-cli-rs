@@ -81,6 +81,24 @@ fn hyperlink(label: &str, url: &str) -> String {
     format!("\x1b]8;;{url}\x1b\\{label}\x1b]8;;\x1b\\")
 }
 
+// Deep link that opens in the Linear desktop app. Set LINEAR_LINKS=web to
+// keep https:// links instead.
+fn issue_link(url: &str) -> String {
+    if std::env::var("LINEAR_LINKS").ok().as_deref() == Some("web") {
+        return url.to_string();
+    }
+    url.strip_prefix("https://linear.app/")
+        .map(|rest| format!("linear://{rest}"))
+        .unwrap_or_else(|| url.to_string())
+}
+
+fn linked_id(id: &str, url: Option<&str>) -> String {
+    match url {
+        Some(url) if supports_hyperlinks() => hyperlink(id, &issue_link(url)),
+        _ => id.to_string(),
+    }
+}
+
 fn compute_issue_table_widths(issues: &[Issue]) -> IssueTableWidths {
     let id_width = issues
         .iter()
@@ -153,7 +171,7 @@ pub fn issue_table(issues: &[Issue]) {
             issue
                 .url
                 .as_deref()
-                .map(|url| hyperlink(&id_plain, url))
+                .map(|url| hyperlink(&id_plain, &issue_link(url)))
                 .unwrap_or(id_plain)
         } else {
             id_plain
@@ -270,7 +288,11 @@ pub fn issue_detail(issue: &Issue) {
     let url = issue.url.as_deref().unwrap_or("—");
 
     // Header
-    println!("{}", format!("{id}  {title}").bold());
+    println!(
+        "{}  {}",
+        linked_id(&id.bold().to_string(), issue.url.as_deref()),
+        title.bold()
+    );
     println!();
 
     // Two-column metadata
@@ -310,6 +332,38 @@ pub fn issue_detail(issue: &Issue) {
             println!();
             for line in desc.lines() {
                 println!("  {line}");
+            }
+        }
+    }
+
+    // Attachments (linked PRs, Slack threads, docs, ...)
+    if let Some(attachments) = &issue.attachments {
+        if !attachments.nodes.is_empty() {
+            let count = attachments.nodes.len();
+            println!();
+            println!(
+                "{}",
+                section_rule(&format!("Attachments ({count})"), width)
+            );
+            println!();
+            let link_titles = supports_hyperlinks();
+            for attachment in &attachments.nodes {
+                let title = attachment.title.as_deref().unwrap_or("Untitled");
+                let title = match attachment.url.as_deref() {
+                    Some(url) if link_titles => hyperlink(&title.bold().to_string(), url),
+                    _ => title.bold().to_string(),
+                };
+                let subtitle = attachment
+                    .subtitle
+                    .as_deref()
+                    .map(|s| format!("  {}", s.dimmed()))
+                    .unwrap_or_default();
+                println!("  {title}{subtitle}");
+                if !link_titles {
+                    if let Some(url) = attachment.url.as_deref() {
+                        println!("  {}", url.dimmed());
+                    }
+                }
             }
         }
     }
@@ -389,7 +443,10 @@ fn issue_ref_line(issue: &IssueRef) -> String {
         .and_then(|u| u.display_name.as_deref().or(u.name.as_deref()))
         .map(|name| format!("  {}", name.dimmed()))
         .unwrap_or_default();
-    format!("{}  {title}  {state}{assignee}", id.bold())
+    format!(
+        "{}  {title}  {state}{assignee}",
+        linked_id(&id.bold().to_string(), issue.url.as_deref())
+    )
 }
 
 fn comment_author(comment: &Comment) -> &str {
