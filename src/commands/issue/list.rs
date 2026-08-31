@@ -4,7 +4,7 @@ use serde_json::json;
 use crate::api::client::LinearClient;
 use crate::api::queries;
 use crate::api::resolve;
-use crate::api::types::IssuesResponse;
+use crate::api::types::{Issue, IssuesResponse};
 use crate::cli::ListArgs;
 use crate::config;
 use crate::output;
@@ -52,16 +52,20 @@ pub async fn run(args: ListArgs) -> Result<()> {
         filter["project"] = json!({ "name": { "containsIgnoreCase": project } });
     }
 
+    // Linear caps page size at 250; page through for larger limits.
+    let limit = args.limit.max(1) as usize;
     let variables = json!({
         "filter": filter,
-        "first": args.limit,
+        "first": (limit.min(250)) as i32,
     });
 
-    let resp: IssuesResponse = client.query(queries::ISSUES, variables).await?;
+    let issues: Vec<Issue> = client
+        .query_all::<IssuesResponse, Issue>(queries::ISSUES, variables, limit)
+        .await?;
     if args.json {
-        println!("{}", serde_json::to_string_pretty(&resp.issues.nodes)?);
+        println!("{}", serde_json::to_string_pretty(&issues)?);
     } else {
-        output::issue_table(&resp.issues.nodes);
+        output::issue_table(&issues);
     }
     Ok(())
 }

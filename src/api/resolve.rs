@@ -5,13 +5,19 @@ use super::client::LinearClient;
 use super::queries;
 use super::types::*;
 
-const LOOKUP_LIMIT: i32 = 250;
+const LOOKUP_PAGE_SIZE: i32 = 250;
+const LOOKUP_MAX: usize = 10_000;
 const CANDIDATE_PREVIEW_LIMIT: usize = 5;
 
 pub async fn team_id(client: &LinearClient, key: &str) -> Result<String> {
-    let resp: TeamsResponse = client.query(queries::TEAMS, json!({})).await?;
-    resp.teams
-        .nodes
+    let teams: Vec<Team> = client
+        .query_all::<TeamsResponse, Team>(
+            queries::TEAMS,
+            json!({ "first": LOOKUP_PAGE_SIZE }),
+            LOOKUP_MAX,
+        )
+        .await?;
+    teams
         .iter()
         .find(|t| {
             t.key
@@ -33,10 +39,13 @@ pub async fn user_id(client: &LinearClient, name: &str) -> Result<String> {
         bail!("User cannot be empty");
     }
 
-    let resp: UsersResponse = client
-        .query(queries::USERS, json!({ "first": LOOKUP_LIMIT }))
+    let users: Vec<User> = client
+        .query_all::<UsersResponse, User>(
+            queries::USERS,
+            json!({ "first": LOOKUP_PAGE_SIZE }),
+            LOOKUP_MAX,
+        )
         .await?;
-    let users = resp.users.nodes;
 
     let exact: Vec<&User> = users
         .iter()
@@ -98,10 +107,13 @@ pub async fn label_id(client: &LinearClient, name: &str) -> Result<String> {
         bail!("Label cannot be empty");
     }
 
-    let resp: LabelsResponse = client
-        .query(queries::LABELS, json!({ "first": LOOKUP_LIMIT }))
+    let labels: Vec<Label> = client
+        .query_all::<LabelsResponse, Label>(
+            queries::LABELS,
+            json!({ "first": LOOKUP_PAGE_SIZE }),
+            LOOKUP_MAX,
+        )
         .await?;
-    let labels = resp.issue_labels.nodes;
 
     let exact_case: Vec<&Label> = labels
         .iter()

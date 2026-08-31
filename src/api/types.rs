@@ -28,6 +28,12 @@ pub struct PageInfo {
     pub end_cursor: Option<String>,
 }
 
+// Lets LinearClient::query_all page through any response that wraps a
+// single connection.
+pub trait ConnectionResponse<T: Serialize> {
+    fn connection(self) -> Connection<T>;
+}
+
 // Domain types
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct User {
@@ -154,6 +160,16 @@ pub struct ViewerResponse {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct IssueCommentsResponse {
+    pub issue: IssueComments,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct IssueComments {
+    pub comments: Connection<Comment>,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct TeamsResponse {
     pub teams: Connection<Team>,
 }
@@ -189,6 +205,30 @@ pub struct UsersResponse {
 pub struct LabelsResponse {
     #[serde(rename = "issueLabels")]
     pub issue_labels: Connection<Label>,
+}
+
+impl ConnectionResponse<Team> for TeamsResponse {
+    fn connection(self) -> Connection<Team> {
+        self.teams
+    }
+}
+
+impl ConnectionResponse<Issue> for IssuesResponse {
+    fn connection(self) -> Connection<Issue> {
+        self.issues
+    }
+}
+
+impl ConnectionResponse<User> for UsersResponse {
+    fn connection(self) -> Connection<User> {
+        self.users
+    }
+}
+
+impl ConnectionResponse<Label> for LabelsResponse {
+    fn connection(self) -> Connection<Label> {
+        self.issue_labels
+    }
 }
 
 // Mutation responses

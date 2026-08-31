@@ -81,15 +81,19 @@ fn hyperlink(label: &str, url: &str) -> String {
     format!("\x1b]8;;{url}\x1b\\{label}\x1b]8;;\x1b\\")
 }
 
+fn app_scheme_url(url: &str) -> String {
+    url.strip_prefix("https://linear.app/")
+        .map(|rest| format!("linear://{rest}"))
+        .unwrap_or_else(|| url.to_string())
+}
+
 // Deep link that opens in the Linear desktop app. Set LINEAR_LINKS=web to
 // keep https:// links instead.
 fn issue_link(url: &str) -> String {
     if std::env::var("LINEAR_LINKS").ok().as_deref() == Some("web") {
         return url.to_string();
     }
-    url.strip_prefix("https://linear.app/")
-        .map(|rest| format!("linear://{rest}"))
-        .unwrap_or_else(|| url.to_string())
+    app_scheme_url(url)
 }
 
 fn linked_id(id: &str, url: Option<&str>) -> String {
@@ -394,35 +398,45 @@ pub fn issue_detail(issue: &Issue) {
                 section_rule(&format!("Comments ({count})"), width)
             );
 
-            let ids: HashSet<&str> = comments.nodes.iter().map(|c| c.id.as_str()).collect();
-            let mut roots: Vec<&Comment> = Vec::new();
-            let mut replies: HashMap<&str, Vec<&Comment>> = HashMap::new();
-            for comment in &comments.nodes {
-                match comment
-                    .parent
-                    .as_ref()
-                    .filter(|p| ids.contains(p.id.as_str()))
-                {
-                    Some(parent) => replies.entry(parent.id.as_str()).or_default().push(comment),
-                    None => roots.push(comment),
-                }
-            }
-            // ISO-8601 UTC timestamps sort correctly as strings
-            roots.sort_by_key(|c| c.created_at.as_deref().unwrap_or(""));
-            for thread in replies.values_mut() {
-                thread.sort_by_key(|c| c.created_at.as_deref().unwrap_or(""));
-            }
-
-            for comment in roots {
+            for (comment, thread) in thread_comments(&comments.nodes) {
                 print_comment(comment, 2);
-                if let Some(thread) = replies.get(comment.id.as_str()) {
-                    for reply in thread {
-                        print_comment(reply, 6);
-                    }
+                for reply in thread {
+                    print_comment(reply, 6);
                 }
             }
         }
     }
+}
+
+// Group comments into (root, replies) threads, both sorted chronologically.
+// Replies whose parent is not in the list are treated as roots.
+fn thread_comments(nodes: &[Comment]) -> Vec<(&Comment, Vec<&Comment>)> {
+    let ids: HashSet<&str> = nodes.iter().map(|c| c.id.as_str()).collect();
+    let mut roots: Vec<&Comment> = Vec::new();
+    let mut replies: HashMap<&str, Vec<&Comment>> = HashMap::new();
+    for comment in nodes {
+        match comment
+            .parent
+            .as_ref()
+            .filter(|p| ids.contains(p.id.as_str()))
+        {
+            Some(parent) => replies.entry(parent.id.as_str()).or_default().push(comment),
+            None => roots.push(comment),
+        }
+    }
+    // ISO-8601 UTC timestamps sort correctly as strings
+    roots.sort_by_key(|c| c.created_at.as_deref().unwrap_or(""));
+    for thread in replies.values_mut() {
+        thread.sort_by_key(|c| c.created_at.as_deref().unwrap_or(""));
+    }
+
+    roots
+        .into_iter()
+        .map(|root| {
+            let thread = replies.remove(root.id.as_str()).unwrap_or_default();
+            (root, thread)
+        })
+        .collect()
 }
 
 fn issue_ref_line(issue: &IssueRef) -> String {
@@ -505,4 +519,104 @@ pub fn team_table(teams: &[Team]) {
     let mut table = builder.build();
     table.with(Style::rounded());
     println!("{table}");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn comment(id: &str, created_at: &str, parent: Option<&str>) -> Comment {
+        Comment {
+            id: id.to_string(),
+            body: Some(format!("body of {id}")),
+            created_at: Some(created_at.to_string()),
+            user: None,
+            bot_actor: None,
+            external_user: None,
+            parent: parent.map(|p| crate::api::types::CommentRef { id: p.to_string() }),
+        }
+    }
+
+    #[test]
+    fn app_scheme_url_rewrites_linear_urls() {
+        assert_eq!(
+            app_scheme_url("https://linear.app/spond/issue/DIS-1401/some-slug"),
+            "linear://spond/issue/DIS-1401/some-slug"
+        );
+        // Non-Linear URLs pass through untouched
+        assert_eq!(
+            app_scheme_url("https://github.com/spondcorp/spond/pull/4574"),
+            "https://github.com/spondcorp/spond/pull/4574"
+        );
+    }
+
+    #[test]
+    fn truncate_visible_respects_char_boundaries() {
+        assert_eq!(truncate_visible("hello", 10), "hello");
+        assert_eq!(truncate_visible("hello", 5), "hello");
+        assert_eq!(truncate_visible("hello", 4), "hel…");
+        assert_eq!(truncate_visible("héllo", 4), "hél…");
+        assert_eq!(truncate_visible("hello", 1), "…");
+        assert_eq!(truncate_visible("hello", 0), "");
+    }
+
+    #[test]
+    fn priority_labels() {
+        assert_eq!(priority_label(1), "Urgent");
+        assert_eq!(priority_label(4), "Low");
+        assert_eq!(priority_label(0), "None");
+        assert_eq!(priority_label(99), "None");
+    }
+
+    #[test]
+    fn relative_time_buckets() {
+        let now = chrono::Utc::now();
+        let fmt = |d: chrono::Duration| (now - d).to_rfc3339();
+        assert_eq!(relative_time(&fmt(chrono::Duration::seconds(30))), "just now");
+        assert_eq!(relative_time(&fmt(chrono::Duration::minutes(5))), "5m ago");
+        assert_eq!(relative_time(&fmt(chrono::Duration::hours(3))), "3h ago");
+        assert_eq!(relative_time(&fmt(chrono::Duration::days(4))), "4d ago");
+        assert_eq!(relative_time(&fmt(chrono::Duration::days(70))), "2mo ago");
+        assert_eq!(relative_time(&fmt(chrono::Duration::days(800))), "2y ago");
+        // Unparseable input falls through unchanged
+        assert_eq!(relative_time("not-a-date"), "not-a-date");
+    }
+
+    #[test]
+    fn thread_comments_nests_replies_chronologically() {
+        // API order: newest first, reply before its parent
+        let nodes = vec![
+            comment("c3", "2026-08-27T10:00:00Z", Some("c1")),
+            comment("c2", "2026-08-26T12:00:00Z", Some("c1")),
+            comment("c1", "2026-08-26T10:00:00Z", None),
+            comment("c0", "2026-08-25T10:00:00Z", None),
+        ];
+        let threads = thread_comments(&nodes);
+        let shape: Vec<(&str, Vec<&str>)> = threads
+            .iter()
+            .map(|(root, replies)| {
+                (
+                    root.id.as_str(),
+                    replies.iter().map(|r| r.id.as_str()).collect(),
+                )
+            })
+            .collect();
+        assert_eq!(
+            shape,
+            vec![("c0", vec![]), ("c1", vec!["c2", "c3"])]
+        );
+    }
+
+    #[test]
+    fn thread_comments_treats_orphan_replies_as_roots() {
+        let nodes = vec![
+            comment("c2", "2026-08-26T12:00:00Z", Some("missing")),
+            comment("c1", "2026-08-26T10:00:00Z", None),
+        ];
+        let threads = thread_comments(&nodes);
+        assert_eq!(threads.len(), 2);
+        assert_eq!(threads[0].0.id, "c1");
+        assert_eq!(threads[1].0.id, "c2");
+        assert!(threads[0].1.is_empty() && threads[1].1.is_empty());
+    }
 }

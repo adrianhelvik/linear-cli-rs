@@ -10,12 +10,16 @@ query {
 "#;
 
 pub const TEAMS: &str = r#"
-query {
-    teams {
+query Teams($first: Int, $after: String) {
+    teams(first: $first, after: $after) {
         nodes {
             id
             key
             name
+        }
+        pageInfo {
+            hasNextPage
+            endCursor
         }
     }
 }
@@ -103,6 +107,32 @@ query Issue($id: String!) {
                 externalUser { id name displayName }
                 parent { id }
             }
+            pageInfo {
+                hasNextPage
+                endCursor
+            }
+        }
+    }
+}
+"#;
+
+pub const ISSUE_COMMENTS: &str = r#"
+query IssueComments($id: String!, $after: String) {
+    issue(id: $id) {
+        comments(first: 100, after: $after) {
+            nodes {
+                id
+                body
+                createdAt
+                user { id name displayName }
+                botActor { name }
+                externalUser { id name displayName }
+                parent { id }
+            }
+            pageInfo {
+                hasNextPage
+                endCursor
+            }
         }
     }
 }
@@ -140,8 +170,8 @@ query WorkflowStates($filter: WorkflowStateFilter) {
 "#;
 
 pub const USERS: &str = r#"
-query Users($first: Int) {
-    users(first: $first) {
+query Users($first: Int, $after: String) {
+    users(first: $first, after: $after) {
         nodes {
             id
             name
@@ -149,17 +179,25 @@ query Users($first: Int) {
             displayName
             active
         }
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
     }
 }
 "#;
 
 pub const LABELS: &str = r#"
-query Labels($first: Int) {
-    issueLabels(first: $first) {
+query Labels($first: Int, $after: String) {
+    issueLabels(first: $first, after: $after) {
         nodes {
             id
             name
             color
+        }
+        pageInfo {
+            hasNextPage
+            endCursor
         }
     }
 }
