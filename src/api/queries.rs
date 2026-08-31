@@ -56,6 +56,7 @@ query Issue($id: String!) {
         priority
         estimate
         url
+        branchName
         createdAt
         updatedAt
         state { id name type color }
@@ -63,12 +64,35 @@ query Issue($id: String!) {
         assignee { id name email displayName }
         labels { nodes { id name color } }
         project { id name }
+        parent {
+            id
+            identifier
+            title
+            url
+            priority
+            state { id name type color }
+            assignee { id name displayName }
+        }
+        children(first: 100) {
+            nodes {
+                id
+                identifier
+                title
+                url
+                priority
+                state { id name type color }
+                assignee { id name displayName }
+            }
+        }
         comments(first: 100) {
             nodes {
                 id
                 body
                 createdAt
                 user { id name displayName }
+                botActor { name }
+                externalUser { id name displayName }
+                parent { id }
             }
         }
     }

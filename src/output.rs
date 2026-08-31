@@ -5,7 +5,9 @@ use std::io::IsTerminal;
 use tabled::builder::Builder;
 use tabled::settings::Style;
 
-use crate::api::types::{Issue, Team};
+use std::collections::{HashMap, HashSet};
+
+use crate::api::types::{Comment, Issue, IssueRef, Team};
 
 const MIN_TITLE_WIDTH: usize = 16;
 const PREFERRED_TITLE_WIDTH: usize = 28;
@@ -292,6 +294,12 @@ pub fn issue_detail(issue: &Issue) {
     if let Some(proj) = project {
         println!("  {:<10} {}", "Project:".dimmed(), proj);
     }
+    if let Some(parent) = &issue.parent {
+        println!("  {:<10} {}", "Parent:".dimmed(), issue_ref_line(parent));
+    }
+    if let Some(branch) = issue.branch_name.as_deref() {
+        println!("  {:<10} {}", "Branch:".dimmed(), branch);
+    }
     println!("  {:<10} {}", "URL:".dimmed(), url);
 
     // Description
@@ -306,6 +314,22 @@ pub fn issue_detail(issue: &Issue) {
         }
     }
 
+    // Sub-issues
+    if let Some(children) = &issue.children {
+        if !children.nodes.is_empty() {
+            let count = children.nodes.len();
+            println!();
+            println!(
+                "{}",
+                section_rule(&format!("Sub-issues ({count})"), width)
+            );
+            println!();
+            for child in &children.nodes {
+                println!("  {}", issue_ref_line(child));
+            }
+        }
+    }
+
     // Comments
     if let Some(comments) = &issue.comments {
         if !comments.nodes.is_empty() {
@@ -316,30 +340,92 @@ pub fn issue_detail(issue: &Issue) {
                 section_rule(&format!("Comments ({count})"), width)
             );
 
+            let ids: HashSet<&str> = comments.nodes.iter().map(|c| c.id.as_str()).collect();
+            let mut roots: Vec<&Comment> = Vec::new();
+            let mut replies: HashMap<&str, Vec<&Comment>> = HashMap::new();
             for comment in &comments.nodes {
-                let author = comment
-                    .user
+                match comment
+                    .parent
                     .as_ref()
-                    .and_then(|u| u.display_name.as_deref().or(u.name.as_deref()))
-                    .unwrap_or("Unknown");
-                let time = comment
-                    .created_at
-                    .as_deref()
-                    .map(relative_time)
-                    .unwrap_or_default();
+                    .filter(|p| ids.contains(p.id.as_str()))
+                {
+                    Some(parent) => replies.entry(parent.id.as_str()).or_default().push(comment),
+                    None => roots.push(comment),
+                }
+            }
+            // ISO-8601 UTC timestamps sort correctly as strings
+            roots.sort_by_key(|c| c.created_at.as_deref().unwrap_or(""));
+            for thread in replies.values_mut() {
+                thread.sort_by_key(|c| c.created_at.as_deref().unwrap_or(""));
+            }
 
-                println!();
-                println!(
-                    "  {}  {}",
-                    author.bold(),
-                    time.dimmed()
-                );
-                if let Some(body) = &comment.body {
-                    for line in body.lines() {
-                        println!("  {line}");
+            for comment in roots {
+                print_comment(comment, 2);
+                if let Some(thread) = replies.get(comment.id.as_str()) {
+                    for reply in thread {
+                        print_comment(reply, 6);
                     }
                 }
             }
+        }
+    }
+}
+
+fn issue_ref_line(issue: &IssueRef) -> String {
+    let id = issue.identifier.as_deref().unwrap_or("—");
+    let title = issue.title.as_deref().unwrap_or("—");
+    let state = issue
+        .state
+        .as_ref()
+        .map(|s| {
+            let name = s.name.as_deref().unwrap_or("—");
+            let st = s.state_type.as_deref().unwrap_or("");
+            state_colored(&format!("[{name}]"), st)
+        })
+        .unwrap_or_default();
+    let assignee = issue
+        .assignee
+        .as_ref()
+        .and_then(|u| u.display_name.as_deref().or(u.name.as_deref()))
+        .map(|name| format!("  {}", name.dimmed()))
+        .unwrap_or_default();
+    format!("{}  {title}  {state}{assignee}", id.bold())
+}
+
+fn comment_author(comment: &Comment) -> &str {
+    comment
+        .user
+        .as_ref()
+        .and_then(|u| u.display_name.as_deref().or(u.name.as_deref()))
+        .or_else(|| comment.bot_actor.as_ref().and_then(|b| b.name.as_deref()))
+        .or_else(|| {
+            comment
+                .external_user
+                .as_ref()
+                .and_then(|u| u.display_name.as_deref().or(u.name.as_deref()))
+        })
+        .unwrap_or("Unknown")
+}
+
+fn print_comment(comment: &Comment, indent: usize) {
+    let pad = " ".repeat(indent);
+    let author = comment_author(comment);
+    let time = comment
+        .created_at
+        .as_deref()
+        .map(relative_time)
+        .unwrap_or_default();
+    let reply_marker = if indent > 2 { "↳ " } else { "" };
+
+    println!();
+    println!(
+        "{pad}{reply_marker}{}  {}",
+        author.bold(),
+        time.dimmed()
+    );
+    if let Some(body) = &comment.body {
+        for line in body.lines() {
+            println!("{pad}{line}");
         }
     }
 }

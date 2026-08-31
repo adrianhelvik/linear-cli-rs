@@ -1,10 +1,13 @@
 [package]
 name = "linear-cli-rs"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
-description = "CLI for the Linear API"
+description = "Fast, zero-config CLI for Linear — issues, sub-issues, comments, search, and raw GraphQL"
 license = "MIT"
 repository = "https://github.com/adrianhelvik/linear-cli-rs"
+readme = "README.md"
+keywords = ["linear", "cli", "issue-tracker", "productivity"]
+categories = ["command-line-utilities"]
 
 [[bin]]
 name = "linear"

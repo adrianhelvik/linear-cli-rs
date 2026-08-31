@@ -72,12 +72,40 @@ pub struct Project {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct BotActor {
+    pub name: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CommentRef {
+    pub id: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Comment {
     pub id: String,
     pub body: Option<String>,
     #[serde(rename = "createdAt")]
     pub created_at: Option<String>,
     pub user: Option<User>,
+    #[serde(rename = "botActor", skip_serializing_if = "Option::is_none")]
+    pub bot_actor: Option<BotActor>,
+    #[serde(rename = "externalUser", skip_serializing_if = "Option::is_none")]
+    pub external_user: Option<User>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parent: Option<CommentRef>,
+}
+
+// Lightweight issue reference used for parent/sub-issue relations
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct IssueRef {
+    pub id: String,
+    pub identifier: Option<String>,
+    pub title: Option<String>,
+    pub url: Option<String>,
+    pub priority: Option<i32>,
+    pub state: Option<WorkflowState>,
+    pub assignee: Option<User>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -89,6 +117,8 @@ pub struct Issue {
     pub priority: Option<i32>,
     pub estimate: Option<f64>,
     pub url: Option<String>,
+    #[serde(rename = "branchName", skip_serializing_if = "Option::is_none")]
+    pub branch_name: Option<String>,
     #[serde(rename = "createdAt")]
     pub created_at: Option<String>,
     #[serde(rename = "updatedAt")]
@@ -98,6 +128,10 @@ pub struct Issue {
     pub assignee: Option<User>,
     pub labels: Option<Connection<Label>>,
     pub project: Option<Project>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parent: Option<IssueRef>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub children: Option<Connection<IssueRef>>,
     pub comments: Option<Connection<Comment>>,
 }
 
