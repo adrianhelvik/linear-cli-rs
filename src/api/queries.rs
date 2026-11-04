@@ -36,10 +36,10 @@ query Issues($filter: IssueFilter, $first: Int, $after: String) {
             url
             createdAt
             updatedAt
-            state { id name type color }
+            state { id name type }
             team { id key name }
             assignee { id name displayName }
-            labels { nodes { id name color } }
+            labels { nodes { id name } }
             project { id name }
         }
         pageInfo {
@@ -63,10 +63,10 @@ query Issue($id: String!) {
         branchName
         createdAt
         updatedAt
-        state { id name type color }
+        state { id name type }
         team { id key name }
         assignee { id name email displayName }
-        labels { nodes { id name color } }
+        labels { nodes { id name } }
         project { id name }
         parent {
             id
@@ -74,7 +74,7 @@ query Issue($id: String!) {
             title
             url
             priority
-            state { id name type color }
+            state { id name type }
             assignee { id name displayName }
         }
         children(first: 100) {
@@ -84,7 +84,7 @@ query Issue($id: String!) {
                 title
                 url
                 priority
-                state { id name type color }
+                state { id name type }
                 assignee { id name displayName }
             }
         }
@@ -147,24 +147,24 @@ query SearchIssues($term: String!, $first: Int) {
             title
             priority
             url
-            state { id name type color }
+            state { id name type }
             team { id key name }
             assignee { id name displayName }
-            labels { nodes { id name color } }
+            labels { nodes { id name } }
         }
     }
 }
 "#;
 
 pub const WORKFLOW_STATES: &str = r#"
-query WorkflowStates($filter: WorkflowStateFilter) {
-    workflowStates(filter: $filter) {
+query WorkflowStates($filter: WorkflowStateFilter, $first: Int, $after: String) {
+    workflowStates(filter: $filter, first: $first, after: $after) {
         nodes {
             id
             name
             type
-            color
         }
+        pageInfo { hasNextPage endCursor }
     }
 }
 "#;
@@ -177,7 +177,6 @@ query Users($first: Int, $after: String) {
             name
             email
             displayName
-            active
         }
         pageInfo {
             hasNextPage
@@ -193,7 +192,6 @@ query Labels($first: Int, $after: String) {
         nodes {
             id
             name
-            color
         }
         pageInfo {
             hasNextPage

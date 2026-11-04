@@ -10,10 +10,7 @@ use crate::output;
 pub async fn run(query: String, json: bool) -> Result<()> {
     let client = LinearClient::new(config::api_key()?);
     let resp: IssueSearchResponse = client
-        .query(
-            queries::ISSUE_SEARCH,
-            json!({ "term": query, "first": 50 }),
-        )
+        .query(queries::ISSUE_SEARCH, json!({ "term": query, "first": 50 }))
         .await?;
     if json {
         println!(

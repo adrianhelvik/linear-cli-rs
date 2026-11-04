@@ -247,7 +247,9 @@ fn relative_time(iso: &str) -> String {
 fn section_rule(label: &str, width: usize) -> String {
     let prefix = format!("── {label} ");
     let remaining = width.saturating_sub(prefix.len());
-    format!("{}{}", prefix, "─".repeat(remaining)).dimmed().to_string()
+    format!("{}{}", prefix, "─".repeat(remaining))
+        .dimmed()
+        .to_string()
 }
 
 pub fn issue_detail(issue: &Issue) {
@@ -285,10 +287,7 @@ pub fn issue_detail(issue: &Issue) {
                 .join(", ")
         })
         .unwrap_or_default();
-    let project = issue
-        .project
-        .as_ref()
-        .and_then(|p| p.name.as_deref());
+    let project = issue.project.as_ref().and_then(|p| p.name.as_deref());
     let url = issue.url.as_deref().unwrap_or("—");
 
     // Header
@@ -329,80 +328,69 @@ pub fn issue_detail(issue: &Issue) {
     println!("  {:<10} {}", "URL:".dimmed(), url);
 
     // Description
-    if let Some(desc) = &issue.description {
-        if !desc.is_empty() {
-            println!();
-            println!("{}", section_rule("Description", width));
-            println!();
-            for line in desc.lines() {
-                println!("  {line}");
-            }
+    if let Some(desc) = &issue.description
+        && !desc.is_empty()
+    {
+        println!();
+        println!("{}", section_rule("Description", width));
+        println!();
+        for line in desc.lines() {
+            println!("  {line}");
         }
     }
 
     // Attachments (linked PRs, Slack threads, docs, ...)
-    if let Some(attachments) = &issue.attachments {
-        if !attachments.nodes.is_empty() {
-            let count = attachments.nodes.len();
-            println!();
-            println!(
-                "{}",
-                section_rule(&format!("Attachments ({count})"), width)
-            );
-            println!();
-            let link_titles = supports_hyperlinks();
-            for attachment in &attachments.nodes {
-                let title = attachment.title.as_deref().unwrap_or("Untitled");
-                let title = match attachment.url.as_deref() {
-                    Some(url) if link_titles => hyperlink(&title.bold().to_string(), url),
-                    _ => title.bold().to_string(),
-                };
-                let subtitle = attachment
-                    .subtitle
-                    .as_deref()
-                    .map(|s| format!("  {}", s.dimmed()))
-                    .unwrap_or_default();
-                println!("  {title}{subtitle}");
-                if !link_titles {
-                    if let Some(url) = attachment.url.as_deref() {
-                        println!("  {}", url.dimmed());
-                    }
-                }
+    if let Some(attachments) = &issue.attachments
+        && !attachments.nodes.is_empty()
+    {
+        let count = attachments.nodes.len();
+        println!();
+        println!("{}", section_rule(&format!("Attachments ({count})"), width));
+        println!();
+        let link_titles = supports_hyperlinks();
+        for attachment in &attachments.nodes {
+            let title = attachment.title.as_deref().unwrap_or("Untitled");
+            let title = match attachment.url.as_deref() {
+                Some(url) if link_titles => hyperlink(&title.bold().to_string(), url),
+                _ => title.bold().to_string(),
+            };
+            let subtitle = attachment
+                .subtitle
+                .as_deref()
+                .map(|s| format!("  {}", s.dimmed()))
+                .unwrap_or_default();
+            println!("  {title}{subtitle}");
+            if !link_titles && let Some(url) = attachment.url.as_deref() {
+                println!("  {}", url.dimmed());
             }
         }
     }
 
     // Sub-issues
-    if let Some(children) = &issue.children {
-        if !children.nodes.is_empty() {
-            let count = children.nodes.len();
-            println!();
-            println!(
-                "{}",
-                section_rule(&format!("Sub-issues ({count})"), width)
-            );
-            println!();
-            for child in &children.nodes {
-                println!("  {}", issue_ref_line(child));
-            }
+    if let Some(children) = &issue.children
+        && !children.nodes.is_empty()
+    {
+        let count = children.nodes.len();
+        println!();
+        println!("{}", section_rule(&format!("Sub-issues ({count})"), width));
+        println!();
+        for child in &children.nodes {
+            println!("  {}", issue_ref_line(child));
         }
     }
 
     // Comments
-    if let Some(comments) = &issue.comments {
-        if !comments.nodes.is_empty() {
-            let count = comments.nodes.len();
-            println!();
-            println!(
-                "{}",
-                section_rule(&format!("Comments ({count})"), width)
-            );
+    if let Some(comments) = &issue.comments
+        && !comments.nodes.is_empty()
+    {
+        let count = comments.nodes.len();
+        println!();
+        println!("{}", section_rule(&format!("Comments ({count})"), width));
 
-            for (comment, thread) in thread_comments(&comments.nodes) {
-                print_comment(comment, 2);
-                for reply in thread {
-                    print_comment(reply, 6);
-                }
+        for (comment, thread) in thread_comments(&comments.nodes) {
+            print_comment(comment, 2);
+            for reply in thread {
+                print_comment(reply, 6);
             }
         }
     }
@@ -489,11 +477,7 @@ fn print_comment(comment: &Comment, indent: usize) {
     let reply_marker = if indent > 2 { "↳ " } else { "" };
 
     println!();
-    println!(
-        "{pad}{reply_marker}{}  {}",
-        author.bold(),
-        time.dimmed()
-    );
+    println!("{pad}{reply_marker}{}  {}", author.bold(), time.dimmed());
     if let Some(body) = &comment.body {
         for line in body.lines() {
             println!("{pad}{line}");
@@ -572,7 +556,10 @@ mod tests {
     fn relative_time_buckets() {
         let now = chrono::Utc::now();
         let fmt = |d: chrono::Duration| (now - d).to_rfc3339();
-        assert_eq!(relative_time(&fmt(chrono::Duration::seconds(30))), "just now");
+        assert_eq!(
+            relative_time(&fmt(chrono::Duration::seconds(30))),
+            "just now"
+        );
         assert_eq!(relative_time(&fmt(chrono::Duration::minutes(5))), "5m ago");
         assert_eq!(relative_time(&fmt(chrono::Duration::hours(3))), "3h ago");
         assert_eq!(relative_time(&fmt(chrono::Duration::days(4))), "4d ago");
@@ -601,10 +588,7 @@ mod tests {
                 )
             })
             .collect();
-        assert_eq!(
-            shape,
-            vec![("c0", vec![]), ("c1", vec!["c2", "c3"])]
-        );
+        assert_eq!(shape, vec![("c0", vec![]), ("c1", vec!["c2", "c3"])]);
     }
 
     #[test]

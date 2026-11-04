@@ -35,16 +35,15 @@ pub async fn run(id: String, state: Option<String>) -> Result<()> {
         let sid = resolve::state_id(&client, &team_id, name).await?;
         (sid, name.clone())
     } else {
-        let states: WorkflowStatesResponse = client
-            .query(
+        let states: Vec<WorkflowState> = client
+            .query_all::<WorkflowStatesResponse, WorkflowState>(
                 queries::WORKFLOW_STATES,
                 json!({ "filter": { "team": { "id": { "eq": team_id } } } }),
+                usize::MAX,
             )
             .await?;
 
         let options: Vec<StateOption> = states
-            .workflow_states
-            .nodes
             .into_iter()
             .map(|s| StateOption {
                 id: s.id,

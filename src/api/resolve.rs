@@ -6,7 +6,8 @@ use super::queries;
 use super::types::*;
 
 const LOOKUP_PAGE_SIZE: i32 = 250;
-const LOOKUP_MAX: usize = 10_000;
+// Reference resolution must inspect every page before declaring a name unique.
+const LOOKUP_MAX: usize = usize::MAX;
 const CANDIDATE_PREVIEW_LIMIT: usize = 5;
 
 pub async fn team_id(client: &LinearClient, key: &str) -> Result<String> {
@@ -29,12 +30,12 @@ pub async fn team_id(client: &LinearClient, key: &str) -> Result<String> {
 }
 
 pub async fn user_id(client: &LinearClient, name: &str) -> Result<String> {
+    let name = name.trim();
     if name.eq_ignore_ascii_case("me") {
         let resp: ViewerResponse = client.query(queries::VIEWER, json!({})).await?;
         return Ok(resp.viewer.id);
     }
 
-    let name = name.trim();
     if name.is_empty() {
         bail!("User cannot be empty");
     }
@@ -86,15 +87,15 @@ pub async fn user_id(client: &LinearClient, name: &str) -> Result<String> {
 }
 
 pub async fn state_id(client: &LinearClient, team_id: &str, name: &str) -> Result<String> {
-    let resp: WorkflowStatesResponse = client
-        .query(
+    let states: Vec<WorkflowState> = client
+        .query_all::<WorkflowStatesResponse, WorkflowState>(
             queries::WORKFLOW_STATES,
             json!({ "filter": { "team": { "id": { "eq": team_id } } } }),
+            LOOKUP_MAX,
         )
         .await?;
     let lower = name.to_lowercase();
-    resp.workflow_states
-        .nodes
+    states
         .iter()
         .find(|s| s.name.as_deref().is_some_and(|n| n.to_lowercase() == lower))
         .map(|s| s.id.clone())

@@ -42,8 +42,6 @@ pub struct User {
     pub email: Option<String>,
     #[serde(rename = "displayName")]
     pub display_name: Option<String>,
-    #[serde(skip_serializing)]
-    pub active: Option<bool>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -59,16 +57,12 @@ pub struct WorkflowState {
     pub name: Option<String>,
     #[serde(rename = "type")]
     pub state_type: Option<String>,
-    #[serde(skip_serializing)]
-    pub color: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Label {
     pub id: String,
     pub name: Option<String>,
-    #[serde(skip_serializing)]
-    pub color: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -205,6 +199,12 @@ pub struct UsersResponse {
 pub struct LabelsResponse {
     #[serde(rename = "issueLabels")]
     pub issue_labels: Connection<Label>,
+}
+
+impl ConnectionResponse<WorkflowState> for WorkflowStatesResponse {
+    fn connection(self) -> Connection<WorkflowState> {
+        self.workflow_states
+    }
 }
 
 impl ConnectionResponse<Team> for TeamsResponse {

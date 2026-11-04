@@ -40,8 +40,7 @@ pub enum Commands {
 }
 
 #[derive(Subcommand)]
-#[command(
-    after_help = "\x1b[1mExamples:\x1b[0m
+#[command(after_help = "\x1b[1mExamples:\x1b[0m
   linear issue list                        List my active issues
   linear issue list --team ENG --all       All ENG issues including done
   linear issue view DIS-510                View issue with comments
@@ -51,8 +50,7 @@ pub enum Commands {
   linear issue create --team ENG           Create issue (interactive)
   linear issue update DIS-510 --state 'In Progress'
   linear issue comment DIS-510 -b 'Fixed'  Add a comment
-  echo 'details...' | linear issue comment DIS-510"
-)]
+  echo 'details...' | linear issue comment DIS-510")]
 pub enum IssueCommands {
     /// List issues with filters
     List(ListArgs),

@@ -38,10 +38,10 @@ pub async fn run(args: CreateArgs) -> Result<()> {
     let team_id = if let Some(key) = &args.team {
         resolve::team_id(&client, key).await?
     } else {
-        let teams: TeamsResponse = client.query(queries::TEAMS, json!({})).await?;
+        let teams: Vec<Team> = client
+            .query_all::<TeamsResponse, Team>(queries::TEAMS, json!({}), usize::MAX)
+            .await?;
         let options: Vec<TeamOption> = teams
-            .teams
-            .nodes
             .into_iter()
             .map(|t| TeamOption {
                 id: t.id,
@@ -74,15 +74,14 @@ pub async fn run(args: CreateArgs) -> Result<()> {
         let sid = resolve::state_id(&client, &team_id, state_name).await?;
         input["stateId"] = json!(sid);
     } else if interactive::is_tty() {
-        let states: WorkflowStatesResponse = client
-            .query(
+        let states: Vec<WorkflowState> = client
+            .query_all::<WorkflowStatesResponse, WorkflowState>(
                 queries::WORKFLOW_STATES,
                 json!({ "filter": { "team": { "id": { "eq": team_id } } } }),
+                usize::MAX,
             )
             .await?;
         let options: Vec<StateOption> = states
-            .workflow_states
-            .nodes
             .into_iter()
             .map(|s| StateOption {
                 id: s.id,

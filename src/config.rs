@@ -41,10 +41,10 @@ pub fn save(config: &Config) -> Result<()> {
 }
 
 pub fn api_key() -> Result<String> {
-    if let Ok(key) = std::env::var("LINEAR_API_KEY") {
-        if !key.is_empty() {
-            return Ok(key);
-        }
+    if let Ok(key) = std::env::var("LINEAR_API_KEY")
+        && !key.is_empty()
+    {
+        return Ok(key);
     }
     let config = load()?;
     match config.api_key {
